@@ -97,17 +97,21 @@ void loop() {
   //counter++;
 
   //Serial1.write(97);
-Serial.write(97);
+  Serial.write(97);
   delay(2000);
   display.clear();
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_10);
   
-
+  String in="";
   while(Serial.available()>0){
     byte i = Serial.read();
     Serial.write(i);
-    
-    display.write(i);
+    in+=(char)i;
+      
   }
+  display.drawStringMaxWidth(0, 0,128, in);
+  display.display();
 
 #else
     if (LoRa.parsePacket()) {
