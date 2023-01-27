@@ -41,7 +41,7 @@ OLED_CLASS_OBJ display(OLED_ADDRESS, OLED_SDA, OLED_SCL);
 
 void setup() {
 
-  Serial.begin(57600);
+  Serial.begin(9600);
   //Serial1.begin(57600,3,1);
   // put your setup code here, to run once:
       if (OLED_RST > 0) {
@@ -78,40 +78,46 @@ void setup() {
 }
 
 int counter = 0;
+long counterRequest=millis();
+const long timeoutRequest=10000;
 
 void loop() {
 
 
-  #if LORA_SENDER
-  // put your main code here, to run repeatedly:
+#if LORA_SENDER
 
-  //Serial.print("Sending packet: ");
-  //Serial.println(counter);
-
-  // send packet
-  //LoRa.beginPacket();
-  //LoRa.print("hello : ");
-  //LoRa.print(counter);
-  //LoRa.endPacket();
-
-  //counter++;
-
-  //Serial1.write(97);
-  Serial.write(97);
-  delay(2000);
-  display.clear();
-  display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_10);
+  if(millis()-counterRequest>timeoutRequest){
+    Serial.write(97);
+    display.clear();
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_10);
+    display.display();
+    counterRequest=millis();
+  }
   
   String in="";
-  while(Serial.available()>0){
-    byte i = Serial.read();
-    Serial.write(i);
-    in+=(char)i;
-      
+
+  if(Serial.available()>0){
+    delay(300);
+    while(Serial.available()>0){
+        byte i = Serial.read();
+        //Serial.write(i);
+        in+=(char)i;
+    }
+    display.clear();
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.setFont(ArialMT_Plain_10);
+    display.drawStringMaxWidth(0, 0,128, in);
+    display.display();
+    Serial.print("Received: ");
+    Serial.println(millis());
+
+    LoRa.beginPacket();
+    LoRa.print("RCV: ");
+    LoRa.print(in.length());
+    LoRa.endPacket();
+
   }
-  display.drawStringMaxWidth(0, 0,128, in);
-  display.display();
 
 #else
     if (LoRa.parsePacket()) {
@@ -127,7 +133,7 @@ void loop() {
         display.display();
         Serial.println(recv);
     }
-#endif
 
+#endif
 
 }
