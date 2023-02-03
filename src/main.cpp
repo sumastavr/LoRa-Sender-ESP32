@@ -5,7 +5,7 @@
 #include <SPI.h>
 #include <LoRa.h>
 
-#define LORA_SENDER 1
+#define LORA_SENDER 0
 
 #define OLED_CLASS_OBJ  SSD1306Wire
 #define OLED_ADDRESS    0x3C
@@ -44,7 +44,7 @@ void setup() {
   Serial.begin(9600);
   //Serial1.begin(57600,3,1);
   // put your setup code here, to run once:
-      if (OLED_RST > 0) {
+    if (OLED_RST > 0) {
         pinMode(OLED_RST, OUTPUT);
         digitalWrite(OLED_RST, HIGH);
         delay(100);
@@ -80,13 +80,14 @@ void setup() {
 int counter = 0;
 long counterRequest=millis();
 const long timeoutRequest=10000;
+bool sendRequest=false;
 
 void loop() {
 
 
 #if LORA_SENDER
 
-  if(millis()-counterRequest>timeoutRequest){
+  if(millis()-counterRequest>timeoutRequest && sendRequest){
     Serial.write(97);
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_LEFT);
@@ -114,7 +115,8 @@ void loop() {
 
     LoRa.beginPacket();
     LoRa.print("RCV: ");
-    LoRa.print(in.length());
+    //LoRa.print(in.length());
+    LoRa.print(in);
     LoRa.endPacket();
 
   }
@@ -122,15 +124,28 @@ void loop() {
 #else
     if (LoRa.parsePacket()) {
         String recv = "";
+        
         while (LoRa.available()) {
             recv += (char)LoRa.read();
         }
+
         counter++;
         display.clear();
+        display.setTextAlignment(TEXT_ALIGN_LEFT);
+        display.setFont(ArialMT_Plain_10);
+        String info = "[" + String(counter) + "]" + "RSSI " + String(LoRa.packetRssi());
+        display.drawString(0, 0, info);
+        display.drawStringMaxWidth(0, 0, 128, recv);
+
+        /*
         display.drawString(display.getWidth() / 2, display.getHeight() / 2, recv);
         String info = "[" + String(counter) + "]" + "RSSI " + String(LoRa.packetRssi());
         display.drawString(display.getWidth() / 2, display.getHeight() / 2 - 16, info);
+        */
+
         display.display();
+        Serial.print(info);
+        Serial.print("  ");
         Serial.println(recv);
     }
 
